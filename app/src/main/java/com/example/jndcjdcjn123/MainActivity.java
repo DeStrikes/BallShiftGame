@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity implements GameControlInterf
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        hideSystemUI();
+        //hideSystemUI();
         initLayout();
         pauseButton.callOnClick();
         int bestScore = loadBestScore();
