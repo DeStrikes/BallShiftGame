@@ -23,7 +23,6 @@ public class MainActivity extends AppCompatActivity implements GameControlInterf
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        //hideSystemUI();
         initLayout();
         pauseButton.callOnClick();
         int bestScore = loadBestScore();
@@ -37,8 +36,6 @@ public class MainActivity extends AppCompatActivity implements GameControlInterf
         super.onPause();
         if (mySurfaceView != null) {
             mySurfaceView.pause();
-        }
-        if (mySurfaceView != null) {
             saveBestScore(mySurfaceView.getBestScore());
         }
     }
@@ -51,17 +48,12 @@ public class MainActivity extends AppCompatActivity implements GameControlInterf
         }
     }
 
-    private void hideSystemUI() {
-        Window w = getWindow();
-        w.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-    }
-
     private void initLayout() {
         frameLayout = new FrameLayout(this);
         setContentView(frameLayout);
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
         int width = displayMetrics.widthPixels, height = displayMetrics.heightPixels;
-        mySurfaceView = new MySurfaceView(this, width, height, this); // Передаем интерфейс
+        mySurfaceView = new MySurfaceView(this, width, height, this);
         frameLayout.addView(mySurfaceView);
 
         pauseButton = new ImageView(this);
@@ -74,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements GameControlInterf
         pauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mySurfaceView.updatePause();
+                mySurfaceView.engine.updatePause();
                 updatePauseMenuVisibility();
             }
         });
@@ -89,7 +81,7 @@ public class MainActivity extends AppCompatActivity implements GameControlInterf
         retryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mySurfaceView.restartGame();
+                mySurfaceView.engine.restartGame();
                 updatePauseMenuVisibility();
             }
         });
@@ -114,10 +106,10 @@ public class MainActivity extends AppCompatActivity implements GameControlInterf
     }
 
     private void updatePauseMenuVisibility() {
-        int visibility = mySurfaceView.paused || mySurfaceView.gameOver ? View.VISIBLE : View.INVISIBLE;
+        int visibility = mySurfaceView.engine.paused || mySurfaceView.engine.gameOver ? View.VISIBLE : View.INVISIBLE;
         retryButton.setVisibility(visibility);
         menuButton.setVisibility(visibility);
-        pauseButton.setVisibility(mySurfaceView.gameOver ? View.INVISIBLE : View.VISIBLE);
+        pauseButton.setVisibility(mySurfaceView.engine.gameOver ? View.INVISIBLE : View.VISIBLE);
     }
 
     @Override
