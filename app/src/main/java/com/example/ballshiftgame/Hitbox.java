@@ -1,9 +1,8 @@
-package com.example.jndcjdcjn123;
+package com.example.ballshiftgame;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
 
 import java.util.ArrayList;
 

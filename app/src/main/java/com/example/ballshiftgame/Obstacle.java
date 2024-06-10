@@ -1,6 +1,4 @@
-package com.example.jndcjdcjn123;
-
-import android.graphics.Bitmap;
+package com.example.ballshiftgame;
 
 public class Obstacle {
     public int x, y, height, width;

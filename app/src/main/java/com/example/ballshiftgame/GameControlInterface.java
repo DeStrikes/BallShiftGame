@@ -1,4 +1,4 @@
-package com.example.jndcjdcjn123;
+package com.example.ballshiftgame;
 
 public interface GameControlInterface {
     void updatePauseVisibility();

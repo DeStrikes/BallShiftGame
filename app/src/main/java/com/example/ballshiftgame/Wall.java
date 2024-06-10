@@ -1,4 +1,4 @@
-package com.example.jndcjdcjn123;
+package com.example.ballshiftgame;
 
 public class Wall {
     public int x, y;

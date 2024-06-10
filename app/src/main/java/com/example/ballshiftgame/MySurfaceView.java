@@ -1,4 +1,4 @@
-package com.example.jndcjdcjn123;
+package com.example.ballshiftgame;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -8,14 +8,13 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.SystemClock;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.core.content.res.ResourcesCompat;
 
-import java.util.ArrayList;
+import com.example.jndcjdcjn123.R;
 
 public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback {
     private SurfaceThread surfaceThread;

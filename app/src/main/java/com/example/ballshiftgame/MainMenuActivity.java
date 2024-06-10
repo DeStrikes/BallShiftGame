@@ -1,4 +1,4 @@
-package com.example.jndcjdcjn123;
+package com.example.ballshiftgame;
 
 import android.content.Context;
 import android.content.Intent;
@@ -6,12 +6,13 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.jndcjdcjn123.R;
 
 public class MainMenuActivity extends AppCompatActivity {
 

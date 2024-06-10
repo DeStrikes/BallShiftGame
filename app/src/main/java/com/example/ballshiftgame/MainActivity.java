@@ -1,4 +1,4 @@
-package com.example.jndcjdcjn123;
+package com.example.ballshiftgame;
 
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +13,8 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.jndcjdcjn123.R;
 
 public class MainActivity extends AppCompatActivity implements GameControlInterface {
 

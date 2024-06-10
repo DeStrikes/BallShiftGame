@@ -1,4 +1,4 @@
-package com.example.jndcjdcjn123;
+package com.example.ballshiftgame;
 
 public class Player {
     int x1, y1, x2, y2, playerSize;
