@@ -34,7 +34,6 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         private int frameCount = 0;
         private int sampleCount = 0;
         private double fps = 0.0;
-        private GameControlInterface gameControl;
 
         public void logFrame() {
             long currentTime = SystemClock.elapsedRealtime();

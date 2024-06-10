@@ -53,7 +53,7 @@ public class MainMenuActivity extends AppCompatActivity {
         quitButton.setImageResource(R.drawable.quit_button);
         FrameLayout.LayoutParams paramsQuit = new FrameLayout.LayoutParams(width * 40 / 100, width * 40 / 200);
         paramsQuit.gravity = Gravity.CENTER_HORIZONTAL;
-        paramsQuit.topMargin = height / 2 + width * 40 / 200 + 100;
+        paramsQuit.topMargin = height / 2 + width * 40 / 200;
         quitButton.setLayoutParams(paramsQuit);
         frameLayout.addView(quitButton);
         quitButton.setOnClickListener(v -> quitGame());
