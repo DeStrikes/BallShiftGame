@@ -1,8 +1,5 @@
 package com.example.jndcjdcjn123;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -141,13 +139,17 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     }
 
     private void drawGround(Canvas canvas) {
-        for (Wall wall : engine.getGroundLeft()) {
-            if (wall.y + engine.groundHeight > 0)
-                canvas.drawBitmap(groundLeftBitmap, wall.x, wall.y, null);
+        synchronized (engine.getGroundLeft()) {
+            for (Wall wall : engine.getGroundLeft()) {
+                if (wall.y + engine.groundHeight > 0)
+                    canvas.drawBitmap(groundLeftBitmap, wall.x, wall.y, null);
+            }
         }
-        for (Wall wall : engine.getGroundRight()) {
-            if (wall.y + engine.groundHeight > 0)
-                canvas.drawBitmap(groundRightBitmap, wall.x, wall.y, null);
+        synchronized (engine.getGroundRight()) {
+            for (Wall wall : engine.getGroundRight()) {
+                if (wall.y + engine.groundHeight > 0)
+                    canvas.drawBitmap(groundRightBitmap, wall.x, wall.y, null);
+            }
         }
     }
 
@@ -160,17 +162,29 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     private void drawObstacles(Canvas canvas) {
         for (Obstacle obstacle : engine.getObstacles()) {
             if (obstacle.y + obstacle.height > 0)
-                canvas.drawBitmap(getObstacleBitmap(obstacle.height), obstacle.x, obstacle.y, null);
+                canvas.drawBitmap(getObstacleBitmap(obstacle.x, obstacle.height), obstacle.x, obstacle.y, null);
         }
     }
 
-    private Bitmap getObstacleBitmap(int height) {
+    private Bitmap getObstacleBitmap(int x, int height) {
         if (height == engine.obstacleHeight1) {
-            return obstacle1;
+            if (x == engine.groundWidth)
+                return obstacle1;
+            else if (x == engine.groundWidth + engine.playerSize * 3 / 4)
+                return obstacle1_dual;
+            return obstacle1_mirrored;
         } else if (height == engine.obstacleHeight2) {
-            return obstacle2;
+            if (x == engine.groundWidth)
+                return obstacle2;
+            else if (x == engine.groundWidth + engine.playerSize * 3 / 4)
+                return obstacle2_dual;
+            return obstacle2_mirrored;
         } else {
-            return obstacle3;
+            if (x == engine.groundWidth)
+                return obstacle3;
+            else if (x == engine.groundWidth + engine.playerSize * 3 / 4)
+                return obstacle3_dual;
+            return obstacle3_mirrored;
         }
     }
 
@@ -197,14 +211,8 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
             textWidth = textPaint.measureText("Вы проиграли!");
             canvas.drawText("Вы проиграли!", (appWidth - textWidth) / 2, appHeight / 2 - 400, textPaint);
             textPaint.setTextSize(60);
-            if (engine.getCountPassedObstacles() > engine.getBestScore() || engine.getBestScore() != engine.lastBestScore) {
-                engine.setBestScore(engine.getCountPassedObstacles());
-                textWidth = textPaint.measureText("Новый рекорд: " + engine.getCountPassedObstacles());
-                canvas.drawText("Новый рекорд: " + engine.getCountPassedObstacles(), (appWidth - textWidth) / 2, appHeight / 2 - 200, textPaint);
-            } else {
-                textWidth = textPaint.measureText("Рекорд: " + engine.getBestScore());
-                canvas.drawText("Рекорд: " + engine.getBestScore(), (appWidth - textWidth) / 2, appHeight / 2 - 200, textPaint);
-            }
+            textWidth = textPaint.measureText("Рекорд: " + engine.getBestScore());
+            canvas.drawText("Рекорд: " + engine.drawScore, (appWidth - textWidth) / 2, appHeight / 2 - 200, textPaint);
         } else {
             textWidth = textPaint.measureText("Пауза");
             canvas.drawText("Пауза", (appWidth - textWidth) / 2, appHeight / 2 - 200, textPaint);

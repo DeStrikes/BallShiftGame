@@ -1,64 +1,56 @@
 package com.example.jndcjdcjn123;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Random;
 
 public class Engine {
-    private int appWidth;
-    private int appHeight;
-    private int speed = 10;
-    private int speedReturn = 15;
-    private int countPassedObstacles = 0;
-    private int lastIncreasedScore = 0;
-    int lastBestScore = 0;
-    private ArrayList<Wall> groundLeft = new ArrayList<>(), groundRight = new ArrayList<>();
-    private ArrayList<Obstacle> obstacles = new ArrayList<>();
-    private int offsetGround = 0, speedGain = 3, speedIncreaseInterval = 10, startSpeed = 10, startSpeedReturn = 15;
-    int groundWidth;
-    int groundHeight;
-    private int originPlayerX;
-    private int originPlayerY;
-    int obstacleWidth;
-    int obstacleHeight1;
-    int obstacleHeight2;
-    int obstacleHeight3;
-    private Player player;
+    private static final String TAG = "Engine";
+    private int appWidth, appHeight;
+    private int speed = 10, speedReturn = 15, speedGain = 3, speedIncreaseInterval = 10, originPlayerX, originPlayerY, offsetGround = 0;
+    private int startSpeed = 10, startSpeedReturn = 15, countPassedObstacles = 0, lastIncreasedScore = 0, bestScore = 0;
+    int drawScore = 0, groundWidth, groundHeight, playerSize, obstacleWidth, obstacleHeight1, obstacleHeight2, obstacleHeight3;
+    private boolean paused = false, gameOver = false;
     private MoveDirection direction = MoveDirection.IDLE;
-    public boolean paused = false;
-    public boolean gameOver = false;
-    public int bestScore = 0;
+    private Player player;
     private GameControlInterface gameControl;
 
+    private ArrayList<Wall> groundLeft = new ArrayList<>(), groundRight = new ArrayList<>();
+    private ArrayList<Obstacle> obstacles = new ArrayList<>();
+
+    static Random random = new Random(System.currentTimeMillis() / 1000L);
+
     enum MoveDirection {
-        LEFT,
-        SPLIT,
-        RIGHT,
-        IDLE
+        LEFT, SPLIT, RIGHT, IDLE
     }
 
     public Engine(Context context, int width, int height, GameControlInterface gameControl) {
         this.gameControl = gameControl;
         this.appHeight = height;
         this.appWidth = width;
+        initializeDimensions();
+        initializePlayer();
+        initializeGround();
+        initializeObstacles();
+    }
+
+    private void initializeDimensions() {
         groundWidth = appWidth * 10 / 100;
         groundHeight = groundWidth * 4;
-        int playerSize = appWidth * 20 / 100;
-        int playerX = originPlayerX = (appWidth - playerSize) / 2;
-        int playerY = originPlayerY = (int) (appHeight * 0.80) - playerSize;
-        player = new Player(playerX, playerY, playerSize);
+        playerSize = appWidth * 20 / 100;
         obstacleWidth = appWidth - groundWidth * 2 - playerSize * 3 / 2;
         obstacleHeight1 = obstacleWidth / 5;
         obstacleHeight2 = obstacleWidth * 36 / 100;
         obstacleHeight3 = obstacleWidth * 42 / 100;
-        initializeGround();
-        initializeObstacles();
+    }
+
+    private void initializePlayer() {
+        originPlayerX = (appWidth - playerSize) / 2;
+        originPlayerY = (int) (appHeight * 0.80) - playerSize;
+        player = new Player(originPlayerX, originPlayerY, playerSize);
     }
 
     private void initializeGround() {
@@ -85,44 +77,39 @@ public class Engine {
     }
 
     private int getRandomXPosition() {
-        switch (getRandomNumber(1, 3)) {
-            case 1:
-                return groundWidth;
-            case 2:
-                return groundWidth + player.playerSize * 3 / 4;
-            case 3:
-                return appWidth - groundWidth - obstacleWidth;
-            default:
-                return groundWidth;
+        int rand = getRandomNumber(1, 3);
+        if (rand == 2) {
+            return groundWidth + player.playerSize * 3 / 4;
+        } else if (rand == 3) {
+            return appWidth - groundWidth - obstacleWidth;
+        } else {
+            return groundWidth;
         }
     }
 
     private int getRandomYPosition() {
-        switch (getRandomNumber(1, 3)) {
-            case 1:
-                return obstacleHeight1;
-            case 2:
-                return obstacleHeight2;
-            case 3:
-                return obstacleHeight3;
-            default:
-                return obstacleHeight1;
+        int rand = getRandomNumber(1, 3);
+        if (rand == 2) {
+            return obstacleHeight2;
+        } else if (rand == 3) {
+            return obstacleHeight3;
+        } else {
+            return obstacleHeight1;
         }
     }
 
     public static int getRandomNumber(int min, int max) {
-        return new Random().nextInt((max - min) + 1) + min;
+        return random.nextInt((max - min) + 1) + min;
     }
 
     public void restartGame() {
-        if (bestScore != lastBestScore) {
-            lastBestScore = bestScore;
+        if (countPassedObstacles > bestScore) {
+            bestScore = countPassedObstacles;
         }
         obstacles.clear();
         groundLeft.clear();
         groundRight.clear();
-        int playerSize = appWidth * 20 / 100;
-        player = new Player(originPlayerX, originPlayerY, playerSize);
+        initializePlayer();
         initializeGround();
         initializeObstacles();
         speed = startSpeed;
@@ -154,16 +141,24 @@ public class Engine {
         updateObstaclesPosition();
         if (checkPlayerCollision()) {
             gameOver = true;
+            if (countPassedObstacles > getBestScore()) {
+                setBestScore(countPassedObstacles);
+            }
+            drawScore = bestScore;
             gameControl.updatePauseVisibility();
         }
     }
 
     private void updateGroundPosition() {
-        for (Wall wall : groundLeft) {
-            wall.y += speed;
+        synchronized (groundLeft) {
+            for (Wall wall : groundLeft) {
+                wall.y += speed;
+            }
         }
-        for (Wall wall : groundRight) {
-            wall.y += speed;
+        synchronized (groundRight) {
+            for (Wall wall : groundRight) {
+                wall.y += speed;
+            }
         }
         resetGroundPositionIfNeeded();
     }
@@ -214,48 +209,48 @@ public class Engine {
 
     private void resetPlayerToOrigin() {
         if (player.x1 < originPlayerX) {
-            player.x1 = min(player.x1 + speedReturn, originPlayerX);
+            player.x1 = Math.min(player.x1 + speedReturn, originPlayerX);
         } else {
-            player.x1 = max(player.x1 - speedReturn, originPlayerX);
+            player.x1 = Math.max(player.x1 - speedReturn, originPlayerX);
         }
         if (player.x2 < originPlayerX + player.playerSize / 2) {
-            player.x2 = min(player.x2 + speedReturn, originPlayerX + player.playerSize / 2);
+            player.x2 = Math.min(player.x2 + speedReturn, originPlayerX + player.playerSize / 2);
         } else {
-            player.x2 = max(player.x2 - speedReturn, originPlayerX + player.playerSize / 2);
+            player.x2 = Math.max(player.x2 - speedReturn, originPlayerX + player.playerSize / 2);
         }
     }
 
     private void moveSplitPlayer() {
         if (direction == MoveDirection.LEFT) {
-            player.x1 = max(player.x1 - speedReturn, groundWidth);
-            player.x2 = max(player.x2 - 2 * speedReturn, player.x1 + player.playerSize / 2);
+            player.x1 = Math.max(player.x1 - speedReturn, groundWidth);
+            player.x2 = Math.max(player.x2 - 2 * speedReturn, player.x1 + player.playerSize / 2);
         } else if (direction == MoveDirection.RIGHT) {
-            player.x2 = min(player.x2 + speedReturn, appWidth - groundWidth - player.playerSize / 2);
-            player.x1 = min(player.x1 + 2 * speedReturn, player.x2 - player.playerSize / 2);
+            player.x2 = Math.min(player.x2 + speedReturn, appWidth - groundWidth - player.playerSize / 2);
+            player.x1 = Math.min(player.x1 + 2 * speedReturn, player.x2 - player.playerSize / 2);
         } else if (direction == MoveDirection.SPLIT) {
-            player.x1 = max(player.x1 - speedReturn, groundWidth);
-            player.x2 = min(player.x2 + speedReturn, appWidth - groundWidth - player.playerSize / 2);
+            player.x1 = Math.max(player.x1 - speedReturn, groundWidth);
+            player.x2 = Math.min(player.x2 + speedReturn, appWidth - groundWidth - player.playerSize / 2);
         }
     }
 
     private void updateUnifiedPlayerPosition() {
         if (direction == MoveDirection.IDLE && player.x1 != originPlayerX) {
             if (player.x1 < originPlayerX) {
-                player.x1 = min(player.x1 + speedReturn, originPlayerX);
-                player.x2 = min(player.x2 + speedReturn, originPlayerX + player.playerSize / 2);
+                player.x1 = Math.min(player.x1 + speedReturn, originPlayerX);
+                player.x2 = Math.min(player.x2 + speedReturn, originPlayerX + player.playerSize / 2);
             } else {
-                player.x1 = max(player.x1 - speedReturn, originPlayerX);
-                player.x2 = max(player.x2 - speedReturn, originPlayerX + player.playerSize / 2);
+                player.x1 = Math.max(player.x1 - speedReturn, originPlayerX);
+                player.x2 = Math.max(player.x2 - speedReturn, originPlayerX + player.playerSize / 2);
             }
         } else if (direction == MoveDirection.LEFT) {
-            player.x1 = max(player.x1 - speedReturn, groundWidth);
-            player.x2 = max(player.x2 - speedReturn, groundWidth + player.playerSize / 2);
+            player.x1 = Math.max(player.x1 - speedReturn, groundWidth);
+            player.x2 = Math.max(player.x2 - speedReturn, groundWidth + player.playerSize / 2);
         } else if (direction == MoveDirection.RIGHT) {
-            player.x1 = min(player.x1 + speedReturn, appWidth - groundWidth - player.playerSize);
-            player.x2 = min(player.x2 + speedReturn, appWidth - groundWidth - player.playerSize / 2);
+            player.x1 = Math.min(player.x1 + speedReturn, appWidth - groundWidth - player.playerSize);
+            player.x2 = Math.min(player.x2 + speedReturn, appWidth - groundWidth - player.playerSize / 2);
         } else if (direction == MoveDirection.SPLIT) {
-            player.x1 = max(player.x1 - speedReturn, groundWidth);
-            player.x2 = min(player.x2 + speedReturn, appWidth - groundWidth - player.playerSize / 2);
+            player.x1 = Math.max(player.x1 - speedReturn, groundWidth);
+            player.x2 = Math.min(player.x2 + speedReturn, appWidth - groundWidth - player.playerSize / 2);
         }
     }
 
@@ -299,6 +294,7 @@ public class Engine {
         }
         return false;
     }
+
     public ArrayList<Wall> getGroundLeft() {
         return groundLeft;
     }
@@ -335,11 +331,12 @@ public class Engine {
         return direction;
     }
 
-    public void setBestScore(int bestScore) {
+    public synchronized void setBestScore(int bestScore) {
+        Log.d(TAG, "Setting best score: " + bestScore);
         this.bestScore = bestScore;
     }
 
-    public int getBestScore() {
+    public synchronized int getBestScore() {
         return bestScore;
     }
 }
