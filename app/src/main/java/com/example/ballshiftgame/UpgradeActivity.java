@@ -117,8 +117,8 @@ public class UpgradeActivity extends AppCompatActivity {
         scrollView.addView(upgradeScrollLayout);
 
         addUpgradeOption(upgradeScrollLayout, "Скорость", engine.getUpgradeSpeedReturnCost(), v -> upgradeSpeedReturn(), R.drawable.divide_speed_up, engine.getUpgradeSpeedReturn(), MAX_UPGRADE_SPEED_RETURN);
-        addUpgradeOption(upgradeScrollLayout, "Множитель очков", engine.getUpgradeScoreMultiplierCost(), v -> upgradeScoreMultiplier(), R.drawable.divide_speed_up, engine.getUpgradeScoreMultiplierLevel(), MAX_UPGRADE_SCORE_MULTIPLIER);
-        addUpgradeOption(upgradeScrollLayout, "Частота препятствий", engine.getUpgradeDistanceCost(), v -> upgradeDistance(), R.drawable.multiplier, engine.getUpgradeDistance(), MAX_UPGRADE_DISTANCE);
+        addUpgradeOption(upgradeScrollLayout, "Множитель очков", engine.getUpgradeScoreMultiplierCost(), v -> upgradeScoreMultiplier(), R.drawable.multiplier, engine.getUpgradeScoreMultiplierLevel(), MAX_UPGRADE_SCORE_MULTIPLIER);
+        addUpgradeOption(upgradeScrollLayout, "Частота препятствий", engine.getUpgradeDistanceCost(), v -> upgradeDistance(), R.drawable.obstacle_distance_up, engine.getUpgradeDistance(), MAX_UPGRADE_DISTANCE);
         addUpgradeOption(upgradeScrollLayout, "Начальная скорость", engine.getUpgradeStartSpeedCost(), v -> upgradeStartSpeed(), R.drawable.speed_up, engine.getUpgradeStartSpeed(), MAX_UPGRADE_START_SPEED);
 
         faqImage = new ImageView(this);
