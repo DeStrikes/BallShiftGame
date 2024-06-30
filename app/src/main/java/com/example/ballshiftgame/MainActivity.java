@@ -7,6 +7,7 @@ import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -24,7 +25,11 @@ public class MainActivity extends AppCompatActivity implements GameControlInterf
 
     MySurfaceView mySurfaceView;
     FrameLayout frameLayout;
-    ImageView pauseButton, retryButton, menuButton;
+    ImageView pauseButton, retryButton, menuButton, faqButton, closeFaqButton;
+    ImageView faqImage;
+    private boolean isFaqVisible = false;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +60,8 @@ public class MainActivity extends AppCompatActivity implements GameControlInterf
         if (mySurfaceView != null) {
             mySurfaceView.pause();
             saveBestScore(mySurfaceView.getBestScore());
-            Log.d(TAG, "Best score saved on pause: " + mySurfaceView.getBestScore());
+            mySurfaceView.engine.savePreferences(this);
+            Log.d(TAG, "Best score and preferences saved on pause: " + mySurfaceView.getBestScore());
         }
     }
 
@@ -88,43 +94,103 @@ public class MainActivity extends AppCompatActivity implements GameControlInterf
                 updatePauseMenuVisibility();
             }
         });
+
+        faqButton = new ImageView(this);
+        faqButton.setImageResource(R.drawable.question_button_sq);
+        FrameLayout.LayoutParams paramsFaq = new FrameLayout.LayoutParams(width * 15 / 100, width * 15 / 100);
+        paramsFaq.leftMargin = 23 * width / 100;
+        paramsFaq.topMargin = height / 2;
+        faqButton.setLayoutParams(paramsFaq);
+        frameLayout.addView(faqButton);
+
+        faqImage = new ImageView(this);
+        faqImage.setImageResource(R.drawable.game_guide);
+        int faqImageWidth = width * 90 / 100;
+        int faqImageHeight = faqImageWidth * 800 / 600;
+        FrameLayout.LayoutParams paramsFaqImage = new FrameLayout.LayoutParams(faqImageWidth, faqImageHeight);
+        paramsFaqImage.gravity = Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL;
+        faqImage.setLayoutParams(paramsFaqImage);
+        faqImage.setVisibility(View.INVISIBLE);
+        frameLayout.addView(faqImage);
+
+        closeFaqButton = new ImageView(this);
+        closeFaqButton.setImageResource(R.drawable.cross_button_sq);
+        FrameLayout.LayoutParams paramsCloseFaq = new FrameLayout.LayoutParams(width * 15 / 100, width * 15 / 100);
+        paramsCloseFaq.gravity = Gravity.CENTER;
+        paramsCloseFaq.topMargin = (int) (height * 5 / 100) + (faqImageHeight / 2);
+        closeFaqButton.setLayoutParams(paramsCloseFaq);
+        closeFaqButton.setVisibility(View.INVISIBLE);
+        frameLayout.addView(closeFaqButton);
+
+        faqButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleFaq();
+            }
+        });
+
+        closeFaqButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleFaq();
+            }
+        });
+
+        frameLayout.setBackgroundColor(android.graphics.Color.BLACK);
+
         retryButton = new ImageView(MainActivity.this);
-        retryButton.setImageResource(R.drawable.retry_button);
-        FrameLayout.LayoutParams paramsRetry = new FrameLayout.LayoutParams(width * 40 / 100, width * 40 / 200);
-        paramsRetry.leftMargin = (width - width * 40 / 100) / 2;
+        retryButton.setImageResource(R.drawable.retry_button_sq);
+        FrameLayout.LayoutParams paramsRetry = new FrameLayout.LayoutParams(width * 15 / 100, width * 15 / 100);
+        paramsRetry.leftMargin = width * 15 / 100 + 23 * width / 100 + 4 * width / 100;
         paramsRetry.topMargin = height / 2;
         retryButton.setLayoutParams(paramsRetry);
         frameLayout.addView(retryButton);
-        retryButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mySurfaceView.engine.restartGame();
-                updatePauseMenuVisibility();
-            }
+        retryButton.setOnClickListener(v -> {
+            mySurfaceView.engine.restartGame();
+            updatePauseMenuVisibility();
         });
         menuButton = new ImageView(MainActivity.this);
-        menuButton.setImageResource(R.drawable.menu_button);
-        FrameLayout.LayoutParams paramsMenu = new FrameLayout.LayoutParams(width * 40 / 100, width * 40 / 200);
-        paramsMenu.leftMargin = (width - width * 40 / 100) / 2;
-        paramsMenu.topMargin = height / 2 + width * 40 / 200 + 100;
+        menuButton.setImageResource(R.drawable.menu_button_sq);
+        FrameLayout.LayoutParams paramsMenu = new FrameLayout.LayoutParams(width * 15 / 100, width * 15 / 100);
+        paramsMenu.leftMargin = width * 15 * 2 / 100 + 23 * width / 100 + 4 * width * 2 / 100;
+        paramsMenu.topMargin = height / 2;
         menuButton.setLayoutParams(paramsMenu);
         frameLayout.addView(menuButton);
-        menuButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                saveBestScore(mySurfaceView.getBestScore());
-                Log.d(TAG, "Best score saved on menu button click: " + mySurfaceView.getBestScore());
-                openMainMenu();
-            }
+        menuButton.setOnClickListener(v -> {
+            saveBestScore(mySurfaceView.getBestScore());
+            mySurfaceView.engine.savePreferences(MainActivity.this);
+            Log.d(TAG, "Best score and preferences saved on menu button click: " + mySurfaceView.getBestScore());
+            openMainMenu();
         });
     }
+
+    private void toggleFaq() {
+        isFaqVisible = !isFaqVisible;
+        if (isFaqVisible) {
+            mySurfaceView.pause();
+            pauseButton.setVisibility(View.INVISIBLE);
+            retryButton.setVisibility(View.INVISIBLE);
+            menuButton.setVisibility(View.INVISIBLE);
+            faqButton.setVisibility(View.INVISIBLE);
+            faqImage.setVisibility(View.VISIBLE);
+            closeFaqButton.setVisibility(View.VISIBLE);
+        } else {
+            faqImage.setVisibility(View.INVISIBLE);
+            closeFaqButton.setVisibility(View.INVISIBLE);
+            mySurfaceView.resume();
+            updatePauseMenuVisibility();
+        }
+    }
+
     private void showToast(String text) {
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
     }
+
     private void updatePauseMenuVisibility() {
         int visibility = mySurfaceView.engine.isPaused() || mySurfaceView.engine.isGameOver() ? View.VISIBLE : View.INVISIBLE;
         retryButton.setVisibility(visibility);
         menuButton.setVisibility(visibility);
+        faqButton.setVisibility(visibility);
         pauseButton.setVisibility(mySurfaceView.engine.isGameOver() ? View.INVISIBLE : View.VISIBLE);
     }
 

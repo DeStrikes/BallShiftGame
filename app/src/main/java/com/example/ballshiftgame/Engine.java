@@ -1,15 +1,24 @@
 package com.example.ballshiftgame;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class Engine {
     private static final String TAG = "Engine";
     private int appWidth, appHeight;
-    private int speed = 10, speedReturn = 15, speedGain = 3, speedIncreaseInterval = 10, originPlayerX, originPlayerY, offsetGround = 0;
+    int speed = 10;
+    private int speedReturn = 15;
+    private int speedGain = 3;
+    private int speedIncreaseInterval = 10;
+    private int originPlayerX;
+    private int originPlayerY;
+    private int offsetGround = 0;
     private int startSpeed = 10, startSpeedReturn = 15, countPassedObstacles = 0, lastIncreasedScore = 0, bestScore = 0;
     int drawScore = 0, groundWidth, groundHeight, playerSize, obstacleWidth, obstacleHeight1, obstacleHeight2, obstacleHeight3;
     private boolean paused = false, gameOver = false;
@@ -22,6 +31,40 @@ public class Engine {
 
     static Random random = new Random(System.currentTimeMillis() / 1000L);
 
+    private static final String PREFS_NAME = "MyPreferences";
+    private static final String UPGRADE_DISTANCE_KEY = "upgrade_distance";
+    private static final String UPGRADE_SPEED_KEY = "upgrade_speed";
+    private static final String UPGRADE_SPEED_RETURN_KEY = "upgrade_speed_return";
+    private static final String UPGRADE_SCORE_MULTIPLIER_LEVEL_KEY = "upgrade_score_multiplier_level";
+    private static final String UPGRADE_SCORE_MULTIPLIER_KEY = "upgrade_score_multiplier";
+    private static final String BALANCE_KEY = "balance";
+    private static final String UPGRADE_DISTANCE_COST_KEY = "upgrade_distance_cost";
+    private static final String UPGRADE_SPEED_COST_KEY = "upgrade_speed_cost";
+    private static final String UPGRADE_SPEED_RETURN_COST_KEY = "upgrade_speed_return_cost";
+    private static final String UPGRADE_SCORE_MULTIPLIER_COST_KEY = "upgrade_score_multiplier_cost";
+    private static final String CURRENT_SKIN_KEY = "current_skin";
+    private static final String SKIN_PURCHASED_PREFIX = "skin_purchased_";
+    private static final String UPGRADE_START_SPEED_KEY = "upgrade_start_speed";
+    private static final String UPGRADE_START_SPEED_COST_KEY = "upgrade_start_speed_cost";
+
+    List<Planet> planets;
+
+    private int upgradeDistance = 0;
+    private int upgradeSpeed = 0;
+    private int upgradeSpeedReturn = 0;
+    private int upgradeScoreMultiplierLevel = 0;
+    private float upgradeScoreMultiplier = 1.0f;
+    private int balance = 0;
+    private int upgradeDistanceCost = 50;
+    private int upgradeSpeedCost = 50;
+    private int upgradeSpeedReturnCost = 50;
+    private int upgradeScoreMultiplierCost = 50;
+    private int currentSkin = 0;
+    private boolean[] purchasedSkins;
+
+    private int upgradeStartSpeed = 0;
+    private int upgradeStartSpeedCost = 70;
+
     enum MoveDirection {
         LEFT, SPLIT, RIGHT, IDLE
     }
@@ -30,10 +73,75 @@ public class Engine {
         this.gameControl = gameControl;
         this.appHeight = height;
         this.appWidth = width;
+        loadPreferences(context);
         initializeDimensions();
         initializePlayer();
         initializeGround();
         initializeObstacles();
+        initializePlanets();
+        speed = upgradeSpeed + startSpeed;
+        speedReturn = startSpeedReturn + upgradeSpeedReturn;
+        purchasedSkins[0] = true;
+    }
+
+    private void initializePlanets() {
+        planets = new ArrayList<>();
+        planets.add(new Planet(appWidth * 15 / 100, 0, 0));
+        planets.add(new Planet(appWidth * 20 / 100, -appHeight, 1));
+        planets.add(new Planet(appWidth * 18 / 100, -2 * appHeight, 2));
+        planets.add(new Planet( appWidth * 25 / 100, -3 * appHeight, 3));
+        planets.add(new Planet( appWidth * 30 / 100, -4 * appHeight, 4));
+    }
+
+    private void loadPreferences(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        upgradeDistance = sharedPreferences.getInt(UPGRADE_DISTANCE_KEY, 0);
+        upgradeSpeed = sharedPreferences.getInt(UPGRADE_SPEED_KEY, 0);
+        upgradeSpeedReturn = sharedPreferences.getInt(UPGRADE_SPEED_RETURN_KEY, 0);
+        upgradeScoreMultiplierLevel = sharedPreferences.getInt(UPGRADE_SCORE_MULTIPLIER_LEVEL_KEY, 0);
+        upgradeScoreMultiplier = sharedPreferences.getFloat(UPGRADE_SCORE_MULTIPLIER_KEY, 1.0f);
+        balance = sharedPreferences.getInt(BALANCE_KEY, 0);
+        currentSkin = sharedPreferences.getInt(CURRENT_SKIN_KEY, 0);
+        purchasedSkins = new boolean[SkinMenuActivity.SKIN_COUNT];
+        for (int i = 0; i < SkinMenuActivity.SKIN_COUNT; i++) {
+            purchasedSkins[i] = sharedPreferences.getBoolean(SKIN_PURCHASED_PREFIX + i, false);
+        }
+
+        upgradeDistanceCost = sharedPreferences.getInt(UPGRADE_DISTANCE_COST_KEY, 50);
+        upgradeSpeedCost = sharedPreferences.getInt(UPGRADE_SPEED_COST_KEY, 50);
+        upgradeSpeedReturnCost = sharedPreferences.getInt(UPGRADE_SPEED_RETURN_COST_KEY, 50);
+        upgradeScoreMultiplierCost = sharedPreferences.getInt(UPGRADE_SCORE_MULTIPLIER_COST_KEY, 50);
+
+        upgradeStartSpeed = sharedPreferences.getInt(UPGRADE_START_SPEED_KEY, 0);
+        upgradeStartSpeedCost = sharedPreferences.getInt(UPGRADE_START_SPEED_COST_KEY, 50);
+        startSpeed -= upgradeSpeed;
+        speedReturn += upgradeSpeedReturn;
+        startSpeed += upgradeStartSpeed;
+    }
+
+    public void savePreferences(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt(UPGRADE_DISTANCE_KEY, upgradeDistance);
+        editor.putInt(UPGRADE_SPEED_KEY, upgradeSpeed);
+        editor.putInt(UPGRADE_SPEED_RETURN_KEY, upgradeSpeedReturn);
+        editor.putInt(UPGRADE_SCORE_MULTIPLIER_LEVEL_KEY, upgradeScoreMultiplierLevel);
+        editor.putFloat(UPGRADE_SCORE_MULTIPLIER_KEY, upgradeScoreMultiplier);
+        editor.putInt(BALANCE_KEY, balance);
+        editor.putInt(CURRENT_SKIN_KEY, currentSkin);
+        for (int i = 0; i < SkinMenuActivity.SKIN_COUNT; i++) {
+            editor.putBoolean(SKIN_PURCHASED_PREFIX + i, purchasedSkins[i]);
+        }
+
+        editor.putInt(UPGRADE_DISTANCE_COST_KEY, upgradeDistanceCost);
+        editor.putInt(UPGRADE_SPEED_COST_KEY, upgradeSpeedCost);
+        editor.putInt(UPGRADE_SPEED_RETURN_COST_KEY, upgradeSpeedReturnCost);
+        editor.putInt(UPGRADE_SCORE_MULTIPLIER_COST_KEY, upgradeScoreMultiplierCost);
+
+        editor.putInt(UPGRADE_START_SPEED_KEY, upgradeStartSpeed);
+        editor.putInt(UPGRADE_START_SPEED_COST_KEY, upgradeStartSpeedCost);
+
+        editor.apply();
     }
 
     private void initializeDimensions() {
@@ -64,13 +172,13 @@ public class Engine {
     }
 
     private void initializeObstacles() {
-        obstacles.add(new Obstacle(groundWidth, -2 * obstacleHeight1, obstacleWidth, obstacleHeight1));
+        obstacles.add(new Obstacle(groundWidth, -2 * obstacleHeight1, obstacleWidth, obstacleHeight1, getRandomNumber(0, 2)));
         int lastY = -2 * obstacleHeight1;
         for (int i = 0; i < 9; ++i) {
             int x = getRandomXPosition();
             int y = getRandomYPosition();
-            int curY = lastY - 5 * y - speed * 35;
-            obstacles.add(new Obstacle(x, curY, obstacleWidth, y));
+            int curY = lastY - 5 * obstacleHeight2 - speed * (35 + upgradeDistance * 3 / 2);
+            obstacles.add(new Obstacle(x, curY, obstacleWidth, y, getRandomNumber(0, 2)));
             lastY = curY;
         }
     }
@@ -105,14 +213,19 @@ public class Engine {
         if (countPassedObstacles > bestScore) {
             bestScore = countPassedObstacles;
         }
+        synchronized (groundLeft) {
+            groundLeft.clear();
+        }
+        synchronized (groundRight) {
+            groundRight.clear();
+        }
         obstacles.clear();
-        groundLeft.clear();
-        groundRight.clear();
         initializePlayer();
         initializeGround();
         initializeObstacles();
-        speed = startSpeed;
-        speedReturn = startSpeedReturn;
+        initializePlanets();
+        speed = upgradeSpeed + startSpeed;
+        speedReturn = startSpeedReturn + upgradeSpeedReturn;
         countPassedObstacles = 0;
         paused = false;
         gameOver = false;
@@ -124,7 +237,6 @@ public class Engine {
 
     public void increaseSpeed() {
         speed += speedGain;
-        speedReturn += speedGain;
     }
 
     public void update() {
@@ -138,8 +250,10 @@ public class Engine {
         updateGroundPosition();
         updatePlayerPosition();
         updateObstaclesPosition();
+        updatePlanetPositions();
         if (checkPlayerCollision()) {
             gameOver = true;
+            addPointsToBalance(countPassedObstacles);
             if (countPassedObstacles > getBestScore()) {
                 setBestScore(countPassedObstacles);
             }
@@ -163,10 +277,14 @@ public class Engine {
     }
 
     private void resetGroundPositionIfNeeded() {
-        int minY = getMinY(groundLeft);
-        resetGroundPosition(groundLeft, minY);
-        minY = getMinY(groundRight);
-        resetGroundPosition(groundRight, minY);
+        synchronized (groundLeft) {
+            int minY = getMinY(groundLeft);
+            resetGroundPosition(groundLeft, minY);
+        }
+        synchronized (groundRight) {
+            int minY = getMinY(groundRight);
+            resetGroundPosition(groundRight, minY);
+        }
     }
 
     private int getMinY(ArrayList<Wall> ground) {
@@ -277,8 +395,8 @@ public class Engine {
             if (obstacles.get(i).y > appHeight) {
                 int x = getRandomXPosition();
                 int y = getRandomYPosition();
-                int curY = minY - 5 * y - speed * 35;
-                obstacles.set(i, new Obstacle(x, curY, obstacleWidth, y));
+                int curY = minY - 5 * obstacleHeight2 - speed * (35 + upgradeDistance * 3 / 2);
+                obstacles.set(i, new Obstacle(x, curY, obstacleWidth, y, getRandomNumber(0, 2)));
                 countPassedObstacles++;
                 break;
             }
@@ -292,6 +410,24 @@ public class Engine {
             }
         }
         return false;
+    }
+
+    private void updatePlanetPositions() {
+        if (!isPaused() && !isGameOver()) {
+            for (Planet planet : planets) {
+                planet.y += speed / 10;
+            }
+            resetPlanetsIfNeeded();
+        }
+    }
+
+    private void resetPlanetsIfNeeded() {
+        for (int i = 0; i < planets.size(); ++i) {
+            Planet planet = planets.get(i);
+            if (planet.y >= appHeight) {
+                planet.y = planets.get((i + planets.size() - 1) % planets.size()).y - appHeight;
+            }
+        }
     }
 
     public ArrayList<Wall> getGroundLeft() {
@@ -337,5 +473,120 @@ public class Engine {
 
     public synchronized int getBestScore() {
         return bestScore;
+    }
+
+    public int getBalance() {
+        return balance;
+    }
+
+    public void addToBalance(int amount) {
+        balance += amount;
+    }
+
+    public void subtractFromBalance(int amount) {
+        if (balance >= amount) {
+            balance -= amount;
+        }
+    }
+
+    public void upgradeDistance() {
+        upgradeDistance++;
+    }
+
+    public void upgradeSpeedReturn() {
+        upgradeSpeedReturn++;
+    }
+
+    public void upgradeStartSpeed() {
+        upgradeStartSpeed++;
+    }
+
+    public void upgradeScoreMultiplier() {
+        upgradeScoreMultiplierLevel++;
+        upgradeScoreMultiplier += 0.25;
+    }
+
+    private void addPointsToBalance(int points) {
+        balance += Math.floor(points * upgradeScoreMultiplier);
+    }
+
+    public int getUpgradeDistance() {
+        return upgradeDistance;
+    }
+
+    public int getUpgradeSpeed() {
+        return upgradeSpeed;
+    }
+
+    public int getUpgradeSpeedReturn() {
+        return upgradeSpeedReturn;
+    }
+
+    public int getUpgradeScoreMultiplierLevel() {
+        return upgradeScoreMultiplierLevel;
+    }
+
+    public float getUpgradeScoreMultiplier() {
+        return upgradeScoreMultiplier;
+    }
+
+    public int getUpgradeDistanceCost() {
+        return upgradeDistanceCost;
+    }
+
+    public void setUpgradeDistanceCost(int upgradeDistanceCost) {
+        this.upgradeDistanceCost = upgradeDistanceCost;
+    }
+
+    public int getUpgradeSpeedCost() {
+        return upgradeSpeedCost;
+    }
+
+    public void setUpgradeSpeedCost(int upgradeSpeedCost) {
+        this.upgradeSpeedCost = upgradeSpeedCost;
+    }
+
+    public int getUpgradeSpeedReturnCost() {
+        return upgradeSpeedReturnCost;
+    }
+
+    public void setUpgradeSpeedReturnCost(int upgradeSpeedReturnCost) {
+        this.upgradeSpeedReturnCost = upgradeSpeedReturnCost;
+    }
+
+    public int getUpgradeScoreMultiplierCost() {
+        return upgradeScoreMultiplierCost;
+    }
+
+    public void setUpgradeScoreMultiplierCost(int upgradeScoreMultiplierCost) {
+        this.upgradeScoreMultiplierCost = upgradeScoreMultiplierCost;
+    }
+
+    public int getUpgradeStartSpeed() {
+        return upgradeStartSpeed;
+    }
+
+    public int getUpgradeStartSpeedCost() {
+        return upgradeStartSpeedCost;
+    }
+
+    public void setUpgradeStartSpeedCost(int upgradeStartSpeedCost) {
+        this.upgradeStartSpeedCost = upgradeStartSpeedCost;
+    }
+
+    public int getCurrentSkin() {
+        return currentSkin;
+    }
+
+    public void setCurrentSkin(int currentSkin) {
+        this.currentSkin = currentSkin;
+    }
+
+    public boolean isSkinPurchased(int skinIndex) {
+        return purchasedSkins[skinIndex];
+    }
+
+    public void purchaseSkin(int skinIndex) {
+        purchasedSkins[skinIndex] = true;
     }
 }
